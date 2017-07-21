@@ -1,43 +1,69 @@
 import sys
 from io import BytesIO
 
+import urllib.request
+import re
+
 import telegram
 from flask import Flask, request, send_file
 
 from fsm import TocMachine
 
+text = urllib.request.urlopen("http://127.0.0.1:4040").read()
+url = re.search(b"https://([A-Za-z0-9]+)\.ngrok\.io", text)
 
-API_TOKEN = 'Your Telegram API Token'
-WEBHOOK_URL = 'Your Webhook URL'
+API_TOKEN = '440630960:AAGUQskfKm7f6n2tKxb8t15BU7FHs3nAnNY'
+WEBHOOK_URL = url.group(0).decode('utf-8') + '/hook'
+
+
 
 app = Flask(__name__)
 bot = telegram.Bot(token=API_TOKEN)
 machine = TocMachine(
     states=[
         'user',
+        'init',
+        'translate',
         'state1',
-        'state2'
+        'state2',
+        'final_state1',
+        'final_State2',
     ],
     transitions=[
         {
             'trigger': 'advance',
             'source': 'user',
-            'dest': 'state1',
-            'conditions': 'is_going_to_state1'
+            'dest': 'init',
+            'conditions': 'bot_init'
         },
         {
             'trigger': 'advance',
-            'source': 'user',
+            'source': 'init',
+            'dest': 'translate',
+            'conditions': 'is_going_to_translate'
+        },
+        {
+            'trigger': 'again',
+            'source': 'translate',
+            'dest': 'init'
+        },
+        {
+            'trigger': 'report',
+            'source': 'translate',
+            'dest': 'state1'
+        },
+        {
+            'trigger': 'query',
+            'source': 'translate',
             'dest': 'state2',
-            'conditions': 'is_going_to_state2'
         },
         {
             'trigger': 'go_back',
             'source': [
                 'state1',
-                'state2'
+                'state2',
             ],
-            'dest': 'user'
+            'dest': 'init'
         }
     ],
     initial='user',
