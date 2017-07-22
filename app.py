@@ -24,10 +24,12 @@ machine = TocMachine(
         'user',
         'init',
         'translate',
-        'state1',
-        'state2',
-        'final_state1',
-        'final_State2',
+        'report',
+        'query',
+        'get_gps',
+        'get_photo',
+        'get_event',
+        'query_result',
     ],
     transitions=[
         {
@@ -50,18 +52,45 @@ machine = TocMachine(
         {
             'trigger': 'report',
             'source': 'translate',
-            'dest': 'state1'
+            'dest': 'report'
+        },
+        ##  report stage 1: upload location
+        {
+            'trigger': 'advance',
+            'source': 'report',
+            'dest': 'get_gps',
+            'conditions': 'is_going_to_get_gps'
+        },
+        ##  report stage 2: upload photo
+        {
+            'trigger': 'advance',
+            'source': 'get_gps',
+            'dest': 'get_photo',
+            'conditions': 'is_going_to_get_photo'
+        },
+        ##  report stage 3: input event
+        {
+            'trigger': 'advance',
+            'source': 'get_photo',
+            'dest': 'get_event',
+            'conditions': 'is_going_to_get_event'
         },
         {
             'trigger': 'query',
             'source': 'translate',
-            'dest': 'state2',
+            'dest': 'query',
+        },
+        {
+            'trigger': 'advance',
+            'source': 'query',
+            'dest': 'query_result',
+            'conditions': 'is_going_to_get_gps'
         },
         {
             'trigger': 'go_back',
             'source': [
-                'state1',
-                'state2',
+                'query_result',
+                'get_event'
             ],
             'dest': 'init'
         }
