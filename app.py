@@ -20,6 +20,7 @@ WEBHOOK_URL = url.group(0).decode('utf-8') + '/hook'
 app = Flask(__name__)
 bot = telegram.Bot(token=API_TOKEN)
 machine = TocMachine(
+    bot,
     states=[
         'user',
         'init',
@@ -114,6 +115,10 @@ def _set_webhook():
 def webhook_handler():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
     machine.advance(update)
+    # debug
+    if machine.state == 'init':
+        update.message.reply_text(update.message.chat.id)
+        bot.sendLocation(update.message.chat.id, 25.0616, 121.5276)
     return 'ok'
 
 
