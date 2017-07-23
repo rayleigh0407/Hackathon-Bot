@@ -116,9 +116,9 @@ def webhook_handler():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
     machine.advance(update)
     # debug
-    if machine.state == 'init':
-        update.message.reply_text(update.message.chat.id)
-        bot.sendLocation(update.message.chat.id, 25.0616, 121.5276)
+    #if machine.state == 'init':
+    #    update.message.reply_text(update.message.chat.id)
+    #    bot.sendLocation(update.message.chat.id, 25.0616, 121.5276)
     return 'ok'
 
 

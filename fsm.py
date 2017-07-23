@@ -198,7 +198,7 @@ class TocMachine(GraphMachine):
             insert_data['Lat'] = lat
             insert_data['Lng'] = lng
 
-            self.bot.sendLocation(update.message.chat.id, lat, lng)
+            #self.bot.sendLocation(update.message.chat.id, lat, lng)
             
             return True
         else:
@@ -455,9 +455,11 @@ class TocMachine(GraphMachine):
         db = MySQLdb.connect("127.0.0.1",    # your host, usually localhost
                      "f74036124",         # your username
                      "eJdFEncbpxcQEdbe",  # your password
-                     "f74036124")        # name of the data base
+                     "f74036124",
+                     charset="utf8")        # name of the data base
 
         cur = db.cursor()
+        cur.execute("SET NAMES utf8")
 
         lat_up = lat + 0.01
         lng_up = lng + 0.01
@@ -469,11 +471,28 @@ class TocMachine(GraphMachine):
         cur.execute("SELECT * FROM irp_report_table WHERE " + condition)
 
         # print all the first cell of all the rows
+        count = 0
+        send_message = ""
         for row in cur.fetchall():
+            count = count + 1
+            send_message = str(count) + ".\n"
+            send_message = send_message + "事件：" + row[3] + "\n"
+            
             print("ID : " + str(row[0]))
             print("event : " + str(row[3]))
             print("Lat : " + str(row[4]))
             print("Lng : " + str(row[5]))
+            #text = urllib.request.urlopen("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + str(row[4]) + "%2C" + str(row[5]) + "&key=AIzaSyC0YHjxhTqUPSIQtCRRLPsKmYZ8NUmiX00&language=zh-TW").read().decode('utf-8')
+            #index3 = text.find("formatted_address")
+            #index4 = text.find("geometry")
+            #address_parse = text[index3 + 22:index4 - 13]
+            #insert_data['location'] = address_parse
+            send_message = send_message + "位置：" + row[2] + "\n"
+            send_message = send_message + "圖片（如果有上傳）及地圖在下方\n"
+            update.message.reply_text(send_message)
+            if row[6] != '':
+                update.message.reply_text(row[6])
+            self.bot.sendLocation(update.message.chat.id, row[4], row[5])
 
 
         db.close()             
