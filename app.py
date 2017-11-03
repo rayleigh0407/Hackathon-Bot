@@ -8,6 +8,7 @@ import telegram
 from flask import Flask, request, send_file
 
 from fsm import TocMachine
+from data import UserData
 
 text = urllib.request.urlopen("http://127.0.0.1:4040").read()
 url = re.search(b"https://([A-Za-z0-9]+)\.ngrok\.io", text)
@@ -19,7 +20,11 @@ WEBHOOK_URL = url.group(0).decode('utf-8') + '/hook'
 
 app = Flask(__name__)
 bot = telegram.Bot(token=API_TOKEN)
-machine = TocMachine(
+
+CurrentUser = []
+UserState = {}
+
+sample_machine = TocMachine(
     bot,
     states=[
         'user',
@@ -114,7 +119,11 @@ def _set_webhook():
 @app.route('/hook', methods=['POST'])
 def webhook_handler():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
-    machine.advance(update)
+    getID = update.message.chat.id
+    if getID not in CurrentUser:
+        CurrentUser.append(getID)
+        UserState[getID] = UserData(getID, bot)
+    UserState[getID].machine.advance(update)
     # debug
     #if machine.state == 'init':
     #    update.message.reply_text(update.message.chat.id)
@@ -125,7 +134,7 @@ def webhook_handler():
 @app.route('/show-fsm', methods=['GET'])
 def show_fsm():
     byte_io = BytesIO()
-    machine.graph.draw(byte_io, prog='dot', format='png')
+    sample_machine.graph.draw(byte_io, prog='dot', format='png')
     byte_io.seek(0)
     return send_file(byte_io, attachment_filename='fsm.png', mimetype='image/png')
 
