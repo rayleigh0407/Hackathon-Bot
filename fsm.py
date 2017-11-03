@@ -76,39 +76,32 @@ def message_config(update):
             asrApi.setAuthorization(appKey, appSecret)     
 
             '''Start sending audio file for recognition'''
-            #print("\n----- Test Speech API, seq=nli,seg -----\n")
-            #print("\nSend audio file... \n");
             responseString =  asrApi.sendAudioFile(asrApi.API_NAME_ASR, 
                     "nli,seg", True, audioFilePath, compressed)
-            #print("\n\nResult:\n\n" , responseString, "\n")
 
             ''' Try to get recognition result if uploaded successfully.    
                 We just check the state by a lazy way :P , you should do it by JSON.'''
             if ("error" not in responseString.lower()): 
-                #print("\n----- Get Recognition Result -----\n")
                 time.sleep(1) #delay for 1 second
                 ''' Try to get result until the end of the recognition is complete '''
                 while (True):
                     responseString = asrApi.getRecognitionResult(
                             asrApi.API_NAME_ASR, "nli,seg")
-                    #print("\n\nResult:\n\n" , responseString ,"\n")
 
-                    #print(responseString)
                     ''' Well, check by lazy way...again :P , do it by JSON please. '''
                     if ("\"final\":true" not in responseString.lower()): 
-                        #print("The recognition is not yet complete.")
                         if ("error" in responseString.lower()): 
                             break
                         time.sleep(2) #delay for 2 second
                     else: 
                         break
 
-            #print("\n\n")
             index1 = responseString.find("result")
             index2 = responseString.find("speech")
             responseString = responseString[index1+9:index2-3]
 
             reply_text = responseString
+
         ## text input
         elif update.message.text != None:
             reply_text = update.message.text
@@ -194,11 +187,8 @@ class TocMachine(GraphMachine):
             lat = update['message']['location']['latitude']
             lng = update['message']['location']['longitude']
             
-            # debug
             insert_data['Lat'] = lat
             insert_data['Lng'] = lng
-
-            #self.bot.sendLocation(update.message.chat.id, lat, lng)
             
             return True
         else:
@@ -335,6 +325,7 @@ class TocMachine(GraphMachine):
                 insert_data['time'] = date
                 insert_data['turn_in'] = 0
 
+                # turn (lng,lat) into a specific location name
                 text = urllib.request.urlopen("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + str(lat) + "%2C" + str(lng) + "&key=AIzaSyC0YHjxhTqUPSIQtCRRLPsKmYZ8NUmiX00&language=zh-TW").read().decode('utf-8')
                 index3 = text.find("formatted_address")
                 index4 = text.find("geometry")
@@ -466,8 +457,8 @@ class TocMachine(GraphMachine):
         lat_down = lat - 0.01
         lng_down = lng - 0.01
 
+        # insert data
         condition = "Lat <= " + str(lat_up) + " AND Lat >= " + str(lat_down) + " AND Lng <= " + str(lng_up) + " AND Lng >= " + str(lng_down)
-        # Use all the SQL you like
         cur.execute("SELECT * FROM irp_report_table WHERE " + condition)
 
         # print all the first cell of all the rows
@@ -482,11 +473,13 @@ class TocMachine(GraphMachine):
             print("event : " + str(row[3]))
             print("Lat : " + str(row[4]))
             print("Lng : " + str(row[5]))
+
             #text = urllib.request.urlopen("https://maps.googleapis.com/maps/api/geocode/json?latlng=" + str(row[4]) + "%2C" + str(row[5]) + "&key=AIzaSyC0YHjxhTqUPSIQtCRRLPsKmYZ8NUmiX00&language=zh-TW").read().decode('utf-8')
             #index3 = text.find("formatted_address")
             #index4 = text.find("geometry")
             #address_parse = text[index3 + 22:index4 - 13]
             #insert_data['location'] = address_parse
+
             send_message = send_message + "位置：" + row[2] + "\n"
             send_message = send_message + "圖片（如果有上傳）及地圖在下方\n"
             update.message.reply_text(send_message)
